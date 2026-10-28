@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Mesh</title>
+<body style="margin:0;background:#0b0f1a;color:#fff;font:34px sans-serif;padding:60px">
+<h1>Mesh – hosted page test</h1>
+<pre id="o" style="font-size:30px;line-height:1.5"></pre>
+<a id="go" href="http://10.1.47.7:8765/tv/" style="color:#7cf">Open Mesh TV on Mac 1 (navigation test)</a>
+<script>
+var o=document.getElementById('o');function p(s){o.textContent+=s+"\n"}
+p("href: "+location.href);p("origin: "+location.origin);
+p("ua: "+navigator.userAgent.slice(0,80));
+function t(u){var x=new XMLHttpRequest();x.open('GET',u);x.timeout=6000;
+ x.onload=function(){p("XHR "+u+" -> "+x.status+" "+x.responseText.slice(0,60))};
+ x.onerror=function(){p("XHR "+u+" -> ERROR")};x.ontimeout=function(){p("XHR "+u+" -> TIMEOUT")};x.send()}
+t("http://10.1.47.7:8765/api/hello");
+if(window.fetch)fetch("http://10.1.47.7:8765/api/hello").then(function(r){return r.text()}).then(function(s){p("fetch -> "+s.slice(0,60))},function(e){p("fetch -> ERROR "+e)});
+document.getElementById('go').focus();
+</script>
