@@ -13,7 +13,7 @@ button:focus,button:hover{outline:none;border-color:#6aa8ff;background:#22305a}
 button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
 .spin{display:inline-block;width:26px;height:26px;border:4px solid #33406a;border-top-color:#6aa8ff;border-radius:50%;animation:s 1s linear infinite;vertical-align:-4px;margin-right:14px}
 @keyframes s{to{transform:rotate(360deg)}}
-#dbg{position:fixed;left:16px;bottom:10px;font-size:18px;color:#46506b}
+#dbg{position:fixed;left:16px;bottom:10px;font-size:22px;color:#6b7694}
 </style></head><body>
 <div id="wrap">
   <h1>Mesh</h1>
@@ -23,7 +23,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
 <div id="dbg"></div>
 <script>
 (function () {
-  var PORT = 8765, TIMEOUT = 1500, CONC = 24;
+  var PORT = 8765, TIMEOUT = 900, CONC = 64, VER = "start 4";
   var q = {};
   location.search.replace(/^\?/, "").split("&").forEach(function (kv) {
     var p = kv.split("="); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || "");
@@ -92,13 +92,14 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
     var ips = [];
     if (last) ips.push(last);
     nets.forEach(function (n) { for (var i = 1; i < 255; i++) ips.push(n + "." + i); });
-    var next = 0, active = 0, hits = 0;
+    var next = 0, active = 0, hits = 0, doneN = 0;
     function pump() {
       while (active < CONC && next < ips.length) {
         (function (ip) {
           active++;
           probe(ip, function (ok, name) {
-            active--; if (ok) { hits++; add(ip, name); }
+            active--; doneN++; if (ok) { hits++; add(ip, name); }
+            if (!order.length && !opened) dbg.textContent = VER + " · checked " + doneN + " of " + ips.length;
             pump();
           });
         })(ips[next++]);
@@ -124,7 +125,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
     if (e.keyCode === 38 || e.keyCode === 37) { bs[Math.max(0, i - 1)].focus(); e.preventDefault(); }
   });
 
-  if (q.debug) dbg.textContent = "nets " + nets.join(",") + " last " + (last || "-");
+  dbg.textContent = VER;
   scan();
 })();
 </script></body></html>
