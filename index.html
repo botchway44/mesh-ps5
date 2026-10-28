@@ -77,12 +77,12 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
     list.innerHTML = "";
     order.forEach(function (ip, i) {
       var b = document.createElement("button");
-      b.innerHTML = (found[ip].name || "Mesh node") + "<small>" + ip + "</small>";
+      b.innerHTML = (found[ip].name || "Mesh node") + "<small>" + ip + (ip === get("mesh.node") ? " · joined" : " · select to join Mesh") + "</small>";
       b.onclick = function () { open(ip); };
       list.appendChild(b);
       if (i === 0) b.focus();
     });
-    if (order.length) msg.textContent = order.length > 1 ? "Choose a device" : "Found Mesh";
+    if (order.length) msg.textContent = order.length > 1 ? "Choose a device to join or open" : "Found a Mesh device";
   }
 
   function scan() {
@@ -105,8 +105,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
       }
       if (active === 0 && next >= ips.length) {
         scanning = false;
-        if (order.length === 1 && !opened && !q.pick) { open(order[0]); return; }
-        if (!order.length && !opened) {
+                if (!order.length && !opened) {
           msg.innerHTML = "No Mesh found. Turn on a Mac or PC running Mesh on this network.";
           var b = document.createElement("button"); b.textContent = "Scan again";
           b.onclick = function () { list.innerHTML = ""; scan(); };
