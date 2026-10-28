@@ -34,7 +34,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
   var net = q.net || get("mesh.net") || "";
   if (q.net) put("mesh.net", q.net);
   var nets = net ? [net] : ["192.168.0", "192.168.1", "10.0.0", "192.168.2", "10.1.1"];
-  var last = get("mesh.node");
+  var last = q.pick ? "" : get("mesh.node");
   var found = {}, order = [], scanning = false, opened = false;
   var msg = document.getElementById("msg"), list = document.getElementById("list"),
       dbg = document.getElementById("dbg");
@@ -43,7 +43,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
     if (opened) return;
     opened = true; put("mesh.node", ip);
     msg.textContent = "Opening Mesh…";
-    location.href = "http://" + ip + ":" + PORT + "/tv/";
+    location.href = "http://" + ip + ":" + PORT + "/tv/?app=1";
   }
 
   function probe(ip, done) {
@@ -105,7 +105,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
       }
       if (active === 0 && next >= ips.length) {
         scanning = false;
-        if (order.length === 1 && !opened) { open(order[0]); return; }
+        if (order.length === 1 && !opened && !q.pick) { open(order[0]); return; }
         if (!order.length && !opened) {
           msg.innerHTML = "No Mesh found. Turn on a Mac or PC running Mesh on this network.";
           var b = document.createElement("button"); b.textContent = "Scan again";
