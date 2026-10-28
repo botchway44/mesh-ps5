@@ -34,14 +34,14 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
   var net = q.net || get("mesh.net") || "";
   if (q.net) put("mesh.net", q.net);
   var nets = net ? [net] : ["192.168.0", "192.168.1", "10.0.0", "192.168.2", "10.1.1"];
-  var last = get("mesh.last");
+  var last = get("mesh.node");
   var found = {}, order = [], scanning = false, opened = false;
   var msg = document.getElementById("msg"), list = document.getElementById("list"),
       dbg = document.getElementById("dbg");
 
   function open(ip) {
     if (opened) return;
-    opened = true; put("mesh.last", ip);
+    opened = true; put("mesh.node", ip);
     msg.textContent = "Opening Mesh…";
     location.href = "http://" + ip + ":" + PORT + "/tv/";
   }
