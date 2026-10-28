@@ -23,7 +23,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
 <div id="dbg"></div>
 <script>
 (function () {
-  var PORT = 8765, TIMEOUT = 900, CONC = 64, VER = "start 4";
+  var PORT = 8765, TIMEOUT = 900, CONC = 64, VER = "start 5";
   var q = {};
   location.search.replace(/^\?/, "").split("&").forEach(function (kv) {
     var p = kv.split("="); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || "");
@@ -63,7 +63,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
     var im = new Image();
     im.onload = function () { end(true, ""); };
     im.src = "http://" + ip + ":" + PORT + "/icon-192.png?t=" + Date.now();
-    setTimeout(function () { end(false); }, TIMEOUT + 200);
+    setTimeout(function () { end(false); try { x.abort(); } catch (e) {} im.onload = null; im.src = ""; }, TIMEOUT + 200);
   }
 
   function add(ip, name) {
@@ -126,6 +126,8 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
   });
 
   dbg.textContent = VER;
-  scan();
+  // Start looking only once the page has finished loading; pending probes would keep the system's loading screen up.
+  function begin() { setTimeout(scan, 100); }
+  if (document.readyState === "complete") begin(); else window.addEventListener("load", begin);
 })();
 </script></body></html>
