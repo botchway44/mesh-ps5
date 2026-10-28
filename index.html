@@ -77,7 +77,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
     list.innerHTML = "";
     order.forEach(function (ip, i) {
       var b = document.createElement("button");
-      b.innerHTML = (found[ip].name || "Mesh node") + "<small>" + ip + (ip === get("mesh.node") ? " · joined" : " · select to join Mesh") + "</small>";
+      b.innerHTML = (found[ip].name || "Mesh node") + "<small>" + ip + (ip === get("mesh.node") ? " · last used" : " · select to join Mesh") + "</small>";
       b.onclick = function () { open(ip); };
       list.appendChild(b);
       if (i === 0) b.focus();
