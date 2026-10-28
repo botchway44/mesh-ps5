@@ -1,17 +1,133 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mesh</title>
-<body style="margin:0;background:#0b0f1a;color:#fff;font:34px sans-serif;padding:60px">
-<h1>Mesh – hosted page test</h1>
-<pre id="o" style="font-size:30px;line-height:1.5"></pre>
-<a id="go" href="http://10.1.47.7:8765/tv/" style="color:#7cf">Open Mesh TV on Mac 1 (navigation test)</a>
+<style>
+html,body{margin:0;height:100%;background:#0b0f1a;color:#e8ecf4;font-family:-apple-system,Helvetica,Arial,sans-serif;overflow:hidden}
+#wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+h1{font-size:96px;margin:0 0 8px;letter-spacing:2px}
+#msg{font-size:36px;color:#9aa6bd;min-height:48px;margin-bottom:36px}
+#list{display:flex;flex-direction:column;gap:18px;min-width:620px}
+button{font:inherit;font-size:34px;padding:22px 36px;border-radius:18px;border:3px solid transparent;background:#18203a;color:#e8ecf4;cursor:pointer}
+button:focus,button:hover{outline:none;border-color:#6aa8ff;background:#22305a}
+button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
+.spin{display:inline-block;width:26px;height:26px;border:4px solid #33406a;border-top-color:#6aa8ff;border-radius:50%;animation:s 1s linear infinite;vertical-align:-4px;margin-right:14px}
+@keyframes s{to{transform:rotate(360deg)}}
+#dbg{position:fixed;left:16px;bottom:10px;font-size:18px;color:#46506b}
+</style></head><body>
+<div id="wrap">
+  <h1>Mesh</h1>
+  <div id="msg"><span class="spin"></span>Looking for Mesh on your network…</div>
+  <div id="list"></div>
+</div>
+<div id="dbg"></div>
 <script>
-var o=document.getElementById('o');function p(s){o.textContent+=s+"\n"}
-p("href: "+location.href);p("origin: "+location.origin);
-p("ua: "+navigator.userAgent.slice(0,80));
-function t(u){var x=new XMLHttpRequest();x.open('GET',u);x.timeout=6000;
- x.onload=function(){p("XHR "+u+" -> "+x.status+" "+x.responseText.slice(0,60))};
- x.onerror=function(){p("XHR "+u+" -> ERROR")};x.ontimeout=function(){p("XHR "+u+" -> TIMEOUT")};x.send()}
-t("http://10.1.47.7:8765/api/hello");
-if(window.fetch)fetch("http://10.1.47.7:8765/api/hello").then(function(r){return r.text()}).then(function(s){p("fetch -> "+s.slice(0,60))},function(e){p("fetch -> ERROR "+e)});
-document.getElementById('go').focus();
-</script>
+(function () {
+  var PORT = 8765, TIMEOUT = 1500, CONC = 24;
+  var q = {};
+  location.search.replace(/^\?/, "").split("&").forEach(function (kv) {
+    var p = kv.split("="); if (p[0]) q[p[0]] = decodeURIComponent(p[1] || "");
+  });
+  function get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+  function put(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  var net = q.net || get("mesh.net") || "";
+  if (q.net) put("mesh.net", q.net);
+  var nets = net ? [net] : ["192.168.0", "192.168.1", "10.0.0", "192.168.2", "10.1.1"];
+  var last = get("mesh.last");
+  var found = {}, order = [], scanning = false, opened = false;
+  var msg = document.getElementById("msg"), list = document.getElementById("list"),
+      dbg = document.getElementById("dbg");
+
+  function open(ip) {
+    if (opened) return;
+    opened = true; put("mesh.last", ip);
+    msg.textContent = "Opening Mesh…";
+    location.href = "http://" + ip + ":" + PORT + "/tv/";
+  }
+
+  function probe(ip, done) {
+    var finished = false;
+    function end(ok, name) { if (finished) return; finished = true; done(ok, name); }
+    var x = new XMLHttpRequest();
+    try {
+      x.open("GET", "http://" + ip + ":" + PORT + "/api/hello"); x.timeout = TIMEOUT;
+      x.onload = function () {
+        var n = ""; try { n = JSON.parse(x.responseText).name || ""; } catch (e) { return end(false); }
+        end(!!n, n);
+      };
+      x.onerror = x.ontimeout = function () {};
+      x.send();
+    } catch (e) {}
+    // Fallback for browsers that refuse http requests from an https page but still load images.
+    var im = new Image();
+    im.onload = function () { end(true, ""); };
+    im.src = "http://" + ip + ":" + PORT + "/icon-192.png?t=" + Date.now();
+    setTimeout(function () { end(false); }, TIMEOUT + 200);
+  }
+
+  function add(ip, name) {
+    if (found[ip]) { if (name && !found[ip].name) { found[ip].name = name; render(); } return; }
+    found[ip] = { ip: ip, name: name || "" }; order.push(ip); render();
+    if (ip === last || order.length === 1) {
+      setTimeout(function () {
+        if (!opened && (ip === last || order.length === 1)) open(ip);
+      }, ip === last ? 0 : 1800);
+    }
+  }
+
+  function render() {
+    list.innerHTML = "";
+    order.forEach(function (ip, i) {
+      var b = document.createElement("button");
+      b.innerHTML = (found[ip].name || "Mesh node") + "<small>" + ip + "</small>";
+      b.onclick = function () { open(ip); };
+      list.appendChild(b);
+      if (i === 0) b.focus();
+    });
+    if (order.length) msg.textContent = order.length > 1 ? "Choose a device" : "Found Mesh";
+  }
+
+  function scan() {
+    if (scanning || opened) return;
+    scanning = true;
+    msg.innerHTML = '<span class="spin"></span>Looking for Mesh on your network…';
+    var ips = [];
+    if (last) ips.push(last);
+    nets.forEach(function (n) { for (var i = 1; i < 255; i++) ips.push(n + "." + i); });
+    var next = 0, active = 0, hits = 0;
+    function pump() {
+      while (active < CONC && next < ips.length) {
+        (function (ip) {
+          active++;
+          probe(ip, function (ok, name) {
+            active--; if (ok) { hits++; add(ip, name); }
+            pump();
+          });
+        })(ips[next++]);
+      }
+      if (active === 0 && next >= ips.length) {
+        scanning = false;
+        if (!order.length && !opened) {
+          msg.innerHTML = "No Mesh found. Turn on a Mac or PC running Mesh on this network.";
+          var b = document.createElement("button"); b.textContent = "Scan again";
+          b.onclick = function () { list.innerHTML = ""; scan(); };
+          list.innerHTML = ""; list.appendChild(b); b.focus();
+          setTimeout(function () { if (!opened && !order.length) { list.innerHTML = ""; scan(); } }, 8000);
+        }
+      }
+    }
+    pump();
+  }
+
+  document.addEventListener("keydown", function (e) {
+    var bs = list.getElementsByTagName("button"); if (!bs.length) return;
+    var i = Array.prototype.indexOf.call(bs, document.activeElement);
+    if (e.keyCode === 40 || e.keyCode === 39) { bs[Math.min(bs.length - 1, i + 1)].focus(); e.preventDefault(); }
+    if (e.keyCode === 38 || e.keyCode === 37) { bs[Math.max(0, i - 1)].focus(); e.preventDefault(); }
+  });
+
+  if (q.debug) dbg.textContent = "nets " + nets.join(",") + " last " + (last || "-");
+  scan();
+})();
+</script></body></html>
