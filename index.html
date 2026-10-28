@@ -69,11 +69,8 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
   function add(ip, name) {
     if (found[ip]) { if (name && !found[ip].name) { found[ip].name = name; render(); } return; }
     found[ip] = { ip: ip, name: name || "" }; order.push(ip); render();
-    if (ip === last || order.length === 1) {
-      setTimeout(function () {
-        if (!opened && (ip === last || order.length === 1)) open(ip);
-      }, ip === last ? 0 : 1800);
-    }
+    // The node used last time opens at once; anything else waits for the scan to finish.
+    if (ip === last) open(ip);
   }
 
   function render() {
@@ -108,6 +105,7 @@ button small{display:block;font-size:24px;color:#9aa6bd;margin-top:6px}
       }
       if (active === 0 && next >= ips.length) {
         scanning = false;
+        if (order.length === 1 && !opened) { open(order[0]); return; }
         if (!order.length && !opened) {
           msg.innerHTML = "No Mesh found. Turn on a Mac or PC running Mesh on this network.";
           var b = document.createElement("button"); b.textContent = "Scan again";
